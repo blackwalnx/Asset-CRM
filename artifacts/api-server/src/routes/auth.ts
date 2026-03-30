@@ -97,7 +97,6 @@ router.get("/login", (req: Request, res: Response) => {
   });
 
   const url = getGoogleOAuthUrl(callbackUrl, state);
-  console.log("[Google OAuth] Redirecting with callback URL:", callbackUrl);
   res.redirect(url);
 });
 
