@@ -76,7 +76,7 @@ router.get("/auth/user", (req: Request, res: Response) => {
 });
 
 router.get("/login", (req: Request, res: Response) => {
-  const callbackUrl = `${getOrigin(req)}/api/auth/google/callback`;
+  const callbackUrl = `${getOrigin(req)}/api/callback`;
   const returnTo = getSafeReturnTo(req.query.returnTo);
 
   const state = crypto.randomBytes(16).toString("hex");
@@ -100,7 +100,7 @@ router.get("/login", (req: Request, res: Response) => {
   res.redirect(url);
 });
 
-router.get("/auth/google/callback", async (req: Request, res: Response) => {
+router.get("/callback", async (req: Request, res: Response) => {
   const { code, state, error } = req.query;
 
   if (error) {
@@ -120,7 +120,7 @@ router.get("/auth/google/callback", async (req: Request, res: Response) => {
   res.clearCookie("return_to", { path: "/" });
 
   try {
-    const callbackUrl = `${getOrigin(req)}/api/auth/google/callback`;
+    const callbackUrl = `${getOrigin(req)}/api/callback`;
     const { accessToken, refreshToken } = await exchangeGoogleCode(
       code as string,
       callbackUrl,
