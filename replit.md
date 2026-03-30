@@ -1,8 +1,8 @@
-# Workspace
+# Think Tank CRM
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+A secure, institutional CRM web application for managing high-level contacts and policy interactions. Built for research institutions and think tanks. NOT a commercial CRM.
 
 ## Stack
 
@@ -10,87 +10,95 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
-- **API framework**: Express 5
+- **Frontend**: React + Vite + Tailwind CSS (artifacts/crm)
+- **Backend**: Express 5 (artifacts/api-server)
 - **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **Authentication**: Replit Auth (OIDC/PKCE, no custom login forms)
+- **Validation**: Zod (zod/v4), drizzle-zod
 - **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Charts**: Recharts (dashboard)
+- **Build**: esbuild (API server)
 
-## Structure
+## Architecture
 
 ```text
-artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+artifacts/
+├── api-server/          # Express 5 API server (port 8080)
+│   └── src/
+│       ├── lib/auth.ts          # OIDC session management
+│       ├── middlewares/authMiddleware.ts   # Auth + role injection
+│       └── routes/
+│           ├── auth.ts          # OIDC login/callback/logout
+│           ├── contacts.ts      # Contact CRUD + soft delete
+│           ├── interactions.ts  # Interaction log
+│           ├── users.ts         # User/role management
+│           ├── dashboard.ts     # Dashboard stats
+│           └── audit.ts         # Audit log
+└── crm/                 # React + Vite frontend (port 22444)
+    └── src/
+        ├── pages/        # login, dashboard, contacts, interactions, admin, audit, submit
+        ├── components/   # layout, auth-guard, ui
+        └── hooks/        # use-roles.ts (role-based auth)
+
+lib/
+├── api-spec/openapi.yaml    # OpenAPI 3.1 source of truth
+├── api-client-react/        # Generated React Query hooks
+├── api-zod/                 # Generated Zod schemas
+├── db/                      # Drizzle ORM schema + connection
+│   └── src/schema/
+│       ├── auth.ts     # sessions, users tables (Replit Auth)
+│       └── crm.ts      # contacts, interactions, crm_roles, audit_logs
+└── replit-auth-web/    # useAuth() hook for browser auth
 ```
 
-## TypeScript & Composite Projects
+## Role-Based Access Control
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+Roles: `super_admin`, `admin`, `fellow`, `associate`, `contributor`, `viewer`
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+- **super_admin / admin**: Full access including confidential notes, user management, audit log
+- **fellow / associate**: Can view/edit contacts and log interactions
+- **contributor**: Can only use the /submit form
+- **viewer**: Read-only access
 
-## Root Scripts
+## Key Features
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+- **Contacts Module**: Add/edit/view/archive contacts. Auto-generated Contact IDs (e.g., GOV-0001). Duplicate email detection. Data aging alerts (180+ days without update).
+- **Interaction Log**: Log meetings, events, interviews. Follow-up tracking. Overdue alerts.
+- **Dashboard**: Charts for contacts by category, relationship breakdown, monthly interactions, overdue follow-ups.
+- **Policy Domain Tagging**: Economy, Defence, Tech, Climate, Governance, Health, Foreign Policy, Education
+- **Engagement Scoring**: Calculated from interaction count + recency
+- **Confidential Field Masking**: `confidentialNotes` hidden from non-admin roles
+- **Soft Delete**: Archive instead of permanent delete
+- **Audit Logging**: All create/update/archive actions tracked with user + timestamp
+- **Public Submit Form**: `/submit` page accessible without login
 
-## Packages
+## API Endpoints
 
-### `artifacts/api-server` (`@workspace/api-server`)
+All under `/api`:
+- `GET /auth/user` — Current auth state
+- `GET /login` — Start OIDC login
+- `GET /callback` — OIDC callback
+- `GET /logout` — End session
+- `GET/POST /contacts` — List and create contacts
+- `POST /contacts/submit` — Public form submission
+- `GET/PUT/DELETE /contacts/:id` — Contact CRUD
+- `GET/POST /interactions` — List and log interactions
+- `GET/PUT /interactions/:id` — Interaction CRUD
+- `GET /users` — List users with roles (admin only)
+- `GET /users/me` — Current user with role
+- `PUT /users/:id/role` — Update user role (admin only)
+- `GET /dashboard/stats` — Dashboard statistics
+- `GET /audit` — Audit log (admin only)
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+## Environment Variables
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+- `SESSION_SECRET` — Express session secret
+- `DATABASE_URL`, `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` — Database connection
+- `REPL_ID` — Used for OIDC client ID (auto-provided by Replit)
 
-### `lib/db` (`@workspace/db`)
+## Running
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
-
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
-
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
-
-### `lib/api-spec` (`@workspace/api-spec`)
-
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+- Frontend dev: `pnpm --filter @workspace/crm run dev`
+- API dev: `pnpm --filter @workspace/api-server run dev`
+- DB schema push: `pnpm --filter @workspace/db run push`
+- Codegen: `pnpm --filter @workspace/api-spec run codegen`

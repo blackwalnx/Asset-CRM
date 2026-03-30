@@ -1,0 +1,23 @@
+packages:
+  "react-hook-form": "Robust form state management"
+  "@hookform/resolvers": "Zod validation resolver for forms"
+  "zod": "Schema validation for forms"
+  "recharts": "Dashboard data visualization"
+  "date-fns": "Date formatting and manipulation"
+  "clsx": "Utility for constructing className strings"
+  "tailwind-merge": "Utility for merging tailwind classes safely"
+  "framer-motion": "Polished animations and page transitions"
+
+images:
+  - path: "artifacts/crm/public/images/login-bg.png"
+    description: "Abstract architectural geometric background with subtle slate and gray gradients, clean minimal institutional feel"
+    aspect_ratio: "16:9"
+  - path: "artifacts/crm/public/images/logo.png"
+    description: "Minimalist modern institutional logo mark, simple interlocking geometric shapes in deep slate gray, transparent background"
+    aspect_ratio: "1:1"
+
+notes:
+  - All API routes use /api prefix and expect credentials automatically
+  - Uses @workspace/replit-auth-web for authentication state
+  - Recharts used for dashboard
+  - Role-based logic relies on /api/users mapping

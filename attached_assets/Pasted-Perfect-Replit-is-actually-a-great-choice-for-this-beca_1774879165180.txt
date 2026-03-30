@@ -1,0 +1,219 @@
+Perfect — Replit is actually a great choice for this because you can build, deploy, and collaborate in one place.
+Below is your Replit-optimized Vibe Coder prompt + setup guide, tailored specifically for your national think tank CRM.
+
+⚡ REPLIT-OPTIMIZED FULL-STACK PROMPT
+(Paste this into Replit AI / Ghostwriter)
+
+🚀 PROJECT NAME
+Neutral Think Tank CRM (Google Sheets Backend + Secure RBAC)
+
+🎯 GOAL
+Build a secure, minimal, institutional CRM web app for managing high-level contacts and policy interactions.
+This is NOT a commercial CRM.
+It is for research institutions and think tanks.
+
+🧱 TECH STACK (REPLIT FRIENDLY)
+Backend
+Node.js + Express
+Google Sheets API (primary DB)
+Google OAuth (via Passport.js)
+Frontend
+React (Vite or Next.js)
+Tailwind CSS
+Recharts (for dashboard)
+Deployment
+Replit Deployments (Autoscale)
+
+🔐 AUTH SYSTEM (CRITICAL)
+Requirements
+Google OAuth ONLY
+Restrict login to:
+@yourdomain.org
+
+Logic
+if (!user.email.endsWith("@yourdomain.org")) {
+  denyAccess();
+}
+
+
+👥 ROLE-BASED ACCESS CONTROL
+Roles
+super_admin
+admin
+fellow
+associate
+contributor
+viewer
+Middleware Example
+function authorize(roles) {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).send("Access denied");
+    }
+    next();
+  };
+}
+
+
+📊 GOOGLE SHEETS STRUCTURE
+Sheet 1: Master_Contacts
+Columns:
+contact_id
+full_name
+designation
+category
+organization
+sector
+official_email
+city
+state
+relationship_level
+sensitivity_level
+last_verified_date
+notes
+
+Sheet 2: Interaction_Log
+interaction_id
+contact_id
+date
+engagement_type
+policy_domain
+outcome
+follow_up_required
+follow_up_date
+sensitivity_flag
+
+Sheet 3: Users_Roles
+email
+role
+status
+
+🔗 GOOGLE SHEETS API SETUP (IMPORTANT)
+Use:
+googleapis npm package
+Service Account Setup
+Create Google Cloud project
+Enable Sheets API
+Create Service Account
+Share Sheet with service email
+
+🧠 CORE FEATURES
+1. Contacts Module
+Add / edit / view contacts
+Auto-generate Contact ID:
+const id = category.slice(0,3).toUpperCase() + "-" + count;
+
+
+2. Interaction Module
+Log meetings, interviews, events
+Attach to contact
+Track follow-ups
+
+3. Dashboard
+Charts:
+Contacts by Category
+Relationship Strength
+Monthly Interactions
+Overdue Follow-ups
+
+4. Form Submission (Contributor Safe)
+Public/internal form route: /submit
+Saves data to sheet
+Default:
+relationship = "Cold"
+sensitivity = "Public"
+
+5. Audit Logs (IMPORTANT ADDITION)
+Track:
+{
+  "user": "email",
+  "action": "edit_contact",
+  "timestamp": "..."
+}
+
+
+🔒 SECURITY FEATURES
+Domain-restricted login
+Role-based API protection
+Input validation
+Hide sensitive fields:
+if (user.role !== "admin") hide(confidential_fields);
+
+
+🎨 FRONTEND STRUCTURE
+Pages
+/login
+/dashboard
+/contacts
+/contacts/:id
+/interactions
+/submit
+/admin
+
+UI Rules
+Minimal
+Neutral colors
+No branding
+No “sales CRM” terms
+
+🧠 THINK TANK–SPECIFIC FEATURES (KEEP THESE)
+Policy Domain Tagging
+Dropdown:
+Economy
+Defence
+Tech
+Climate
+Governance
+
+Engagement Strength Logic
+score = interactions_count + recency_weight
+
+
+Confidential Data Handling
+Only admin can view
+Mask for others
+
+Follow-Up Alerts
+Highlight overdue
+Dashboard widget
+
+⚙️ REPLIT FILE STRUCTURE
+/backend
+  server.js
+  routes/
+  controllers/
+  middleware/
+
+/frontend
+  src/
+  components/
+  pages/
+
+/utils
+  sheets.js
+  auth.js
+
+
+🔥 BONUS FEATURES (ADD THESE)
+1. Duplicate Detection
+Warn if same email exists
+2. Soft Delete
+Mark as "archived" instead of delete
+3. Data Aging
+Highlight contacts not updated in 180 days
+
+🚀 DEPLOYMENT (REPLIT)
+Click Deploy
+Use Autoscale
+Add environment variables:
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+SESSION_SECRET
+
+🎯 FINAL OUTPUT
+Fully working web app
+Secure login
+Role-based dashboard
+Google Sheets integration
+Clean UI
+Mobile responsive
