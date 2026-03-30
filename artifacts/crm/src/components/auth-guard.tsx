@@ -1,10 +1,10 @@
 import React from "react";
-import { useAuth } from "@workspace/replit-auth-web";
+import { useAuth } from "@/hooks/use-auth";
 import { useUserRole } from "@/hooks/use-roles";
 import { Spinner } from "@/components/ui";
 
 export function AuthGuard({ children, requireAdmin = false, requireEdit = false }: { children: React.ReactNode, requireAdmin?: boolean, requireEdit?: boolean }) {
-  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { isAdmin, canEdit, isLoading: roleLoading } = useUserRole();
 
   React.useEffect(() => {

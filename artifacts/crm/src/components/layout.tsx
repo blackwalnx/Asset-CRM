@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@workspace/replit-auth-web";
+import { useAuth } from "@/hooks/use-auth";
 import { useUserRole } from "@/hooks/use-roles";
 import { cn, getInitials } from "@/lib/utils";
 import { 
@@ -73,9 +73,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="p-4 border-t border-zinc-800 bg-zinc-950/50">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="h-8 w-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-semibold text-zinc-300">
-              {user?.firstName ? getInitials(`${user.firstName} ${user.lastName}`) : 'U'}
-            </div>
+            {user?.profileImageUrl ? (
+              <img 
+                src={user.profileImageUrl} 
+                alt="Profile" 
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-semibold text-zinc-300">
+                {user?.firstName ? getInitials(`${user.firstName} ${user.lastName}`) : 'U'}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-zinc-200 truncate">{user?.firstName} {user?.lastName}</p>
               <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
